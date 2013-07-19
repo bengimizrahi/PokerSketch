@@ -12,15 +12,20 @@ Player 7
     Chips 450
 
 Dealer Kursat
-Bengi holds AsKd
+Bengi holds AsKd (visible)
 Kursat holds any-pair
 Community cards Ad Ks 2c
 
 # Pre-flop
 Kursat calls
+e
 Bengi raises to 40
+f
 Kursat calls
+g
 
 # Flop
 Bengi goes all-in
+h
 Kursat calls
+i
