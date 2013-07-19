@@ -1,6 +1,6 @@
 Num-Seats 9
-Blinds 5 10
-Antes 1
+Blinds 10 20
+Antes 5
 Player 2
     Name Bengi
     Chips 200
@@ -18,14 +18,9 @@ Community cards Ad Ks 2c
 
 # Pre-flop
 Kursat calls
-e
-Bengi raises to 40
-f
-Kursat calls
-g
+Cefi raises to 40
+Bengi calls
 
 # Flop
 Bengi goes all-in
-h
-Kursat calls
-i
+#Kursat calls

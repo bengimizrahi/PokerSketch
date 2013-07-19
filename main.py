@@ -1,17 +1,23 @@
 from poker import *
 
+
 class InputParser:
     
     def __init__(self, inputFile, game):
+
 	self.game = game
 	self.inputFile = inputFile
 	self.errors = []
 	self.warnings = []
 
+
     def parse(self):
+
 	input = open(self.inputFile, 'r')
 	for (i, line) in enumerate(input.xreadlines()):
 	    self.lineNumber = i + 1
+	    print
+	    print "AFTER: %s" % (line)
 	    line = line.strip()
 	    if len(line) == 0 or line.startswith('#'): continue
 	    line = line.lower()
@@ -19,17 +25,22 @@ class InputParser:
 	    cmd = args.pop(0)
 	    if self.readLine(cmd, args) == False:
 		return False
+	    print game
 	input.close()
 	return True
 
+
     def isNumber(self, str):
+
 	tokens = str.split(".")
 	for t in tokens:
 	    if not t.isdigit():	
 		return False
 	return True
 
+
     def readLine(self, cmd, args):
+
 	if cmd == "num-seats":
 	    if not self.isNumber(args[0]):
 		self.errors.append((self.lineNumber, "%s is not a valid number" % (args[0])))
@@ -41,6 +52,7 @@ class InputParser:
 	    else:
 		self.game.setNumSeats(numSeats)
 		return True
+
 	elif cmd == "blinds":
 	    if len(args) != 2:
 		self.errors.append((self.lineNumber, "You should put two entries, one for small blind and one for big blind"))
@@ -52,10 +64,11 @@ class InputParser:
 	    smallBlind = int(args.pop(0))
 	    bigBlind = int(args.pop(0))
 	    if smallBlind > bigBlind:
-		self.errors.append((self.lineNumber, "Small blind should less than big blind"))
+		self.errors.append((self.lineNumber, "Small blind should be less than big blind"))
 		return False
 	    self.game.setBlinds(smallBlind, bigBlind)
 	    return True
+
 	elif cmd == "antes":
 	    if len(args) != 1:
 		self.warnings.append((self.lineNumber, "There must be only one entry for antes"))
@@ -64,6 +77,7 @@ class InputParser:
 	    antes = int(args.pop(0))
 	    self.game.setAntes(antes)
 	    return True
+
 	elif cmd == "player":
 	    if not self.isNumber(args[0]):
 		self.errors.append((self.lineNumber, "%s is not a valid number" % (args[0])))
@@ -75,6 +89,7 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, "Failed to select player with index %s" % (playerIndex)))
 		return False
+
 	elif cmd == "name":
 	    player = self.game.currentPlayer
 	    if player:
@@ -89,6 +104,7 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, "You should first select a player before naming"))
 		return False
+
 	elif cmd == "chips":
 	    player = self.game.currentPlayer
 	    if player:
@@ -105,6 +121,7 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, "You should first select a player before giving chips"))
 		return False
+
 	elif cmd == "cards" or cmd == "hold" or cmd == "holds":
 	    player = self.game.currentPlayer
 	    if player:
@@ -113,6 +130,7 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, "You should first select a player before selecting cards"))
 		return False
+
 	elif cmd == "dealer":
 	    if len(args) == 0:
 		player = self.game.currentPlayer
@@ -132,6 +150,7 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, "Player %s cannot be found in the current list of players" % (name)))
 		return False
+
 	elif cmd == "community":
 	    if args[0] == "cards":
 		communityCards = args[1:]
@@ -142,34 +161,43 @@ class InputParser:
 	    else:
 		self.errors.append((self.lineNumber, self.game.lastError))
 		return False
+
 	else:
 	    name = cmd
 	    player = self.game.playerByName(name)
+
 	    if player:
 		if len(args) == 0:
 		    self.errors.append((lineNumber, "No actions has been entered here"))
 		    return False
+
 		action = args.pop(0)
 		if action == "hold" or action == "holds":
 		    lastArg = args[len(args)-1]
+
 		    if lastArg == "visible" or lastArg == "(visible)" or lastArg == "always-visible" or lastArg == "(always-visible)" or lastArg == "visible-always" or lastArg == "(visible-always)":
 			player.cardVisibility = ALWAYS_VISIBLE
 			args.pop()
+
 		    elif lastArg == "invisible" or lastArg == "(invisible)":
 			args.pop()
+
 		    elif lastArg == "visible-on-hover" or lastArg == "(visible-on-hover)":
 			player.cardVisibility = VISIBLE_ON_HOVER
+
 		    if player.setCards(args):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, player.lastError))
 			return False
+		
 		elif action == "fold" or action == "folds":
-		    if self.game.addAction(FOLD):
+		    if self.game.addAction(player, FOLD):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, self.game.lastError))
 			return False
+
 		elif action == "bet" or action == "bets":
 		    if len(args) == 0:
 			self.errors.append((self.lineNumber, "No amount of bet has been entered here"))
@@ -177,17 +205,19 @@ class InputParser:
 		    if not self.isNumber(args[0]):
 			self.errors.append((self.lineNumber, "%s is not a valid number" % (args[0])))
 		    amount = int(args.pop(0))
-		    if self.game.addAction(BET, amount):
+		    if self.game.addAction(player, BET, amount):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, self.game.lastError))
 			return False
+
 		elif action == "call" or action == "calls":
-		    if self.game.addAction(CALL):
+		    if self.game.addAction(player, CALL):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, self.game.lastError))
 			return False
+
 		elif action == "raise" or action == "raises":
 		    nextWord = args[0]
 		    if nextWord == "to":
@@ -202,14 +232,15 @@ class InputParser:
 			self.errors.append((self.lineNumber, "%s is not a valid number" % (args[0])))
 			return False
 		    amount = int(args.pop(0))
-		    if self.game.addAction(RAISE, amount):
+		    if self.game.addAction(player, RAISE, amount):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, "Error while processing action 'raise':\n\t%s" % (self.game.lastError)))
 			return False
+
 		elif action == "go" or action == "goes":
 		    if args[0] == "all-in" or (args[0] == "all" and args[1] == "in"):
-			if self.game.addAction(GO_ALL_IN):
+			if self.game.addAction(player, GO_ALL_IN):
 			    return True
 			else:
 			    self.errors.append((self.lineNumber, self.game.lastError))
@@ -226,6 +257,7 @@ class InputParser:
 
 
 if __name__ == "__main__":
+
     game = Game()
     parser = InputParser("input.txt", game)
     if parser.parse():
