@@ -1,4 +1,7 @@
 from poker import *
+from common import *
+
+import sys
 
 
 class InputParser:
@@ -16,16 +19,27 @@ class InputParser:
 	input = open(self.inputFile, 'r')
 	for (i, line) in enumerate(input.xreadlines()):
 	    self.lineNumber = i + 1
-	    print
-	    print "AFTER: %s" % (line)
 	    line = line.strip()
+
+	    print "----------- Line %d ---- %s ----------" % (self.lineNumber, line)
+
 	    if len(line) == 0 or line.startswith('#'): continue
+
+	    text_line = line
+	    text_before = "BEFORE: %s\n\n%s" % (text_line, str(game))
+
 	    line = line.lower()
 	    args = line.split(' ')
 	    cmd = args.pop(0)
-	    if self.readLine(cmd, args) == False:
+
+	    if self.readLine(cmd, args):
+		text_after = "AFTER: %s\n\n%s" % (text_line, str(game))
+		print sideBySideText([text_before, text_after], 150)
+	    else:
+		print text_before
+		input.close()
 		return False
-	    print game
+
 	input.close()
 	return True
 
@@ -140,16 +154,34 @@ class InputParser:
 		else:
 		    self.errors.append((self.lineNumber, "Either select a player first, or append the player name here"))
 		    return False
-	    if len(args) > 1:
-		self.warnings.append((self.lineNumber, "You entered multiple names here; only using the first one"))
-	    name = args.pop(0)
-	    player = self.game.playerByName(name)
-	    if player:
-		self.game.setDealer(player)
+	    
+	    elif len(args) == 1:
+		name = args.pop(0)
+		if name == "player":
+		    self.errors.append((self.lineNumber, "Player number has not been specified"))
+		    return False
+		player = self.game.playerByName(name)
+		if player:
+		    self.game.setDealer(player)
+		    return True
+		else:
+		    self.errors.append((self.lineNumber, "Player %s cannot be found in the current list of players" % (name)))
+		    return False
+
+	    elif len(args) == 2:
+		param = args.pop(0)
+		if param != "player":
+		    self.errors.append((self.lineNumber, "Syntax Error"))
+		    return False
+		number = args.pop(0)
+		if not self.isNumber(number):
+		    self.errors.append((self.lineNumber, "%s is not a valid number" % (number)))
+		    return False
+		index = int(number)
+		if self.game.playerAtIndex(index) == None:
+		    self.game.insertPlayerAtIndex(index)
+		self.game.dealer = self.game.playerAtIndex(index) 
 		return True
-	    else:
-		self.errors.append((self.lineNumber, "Player %s cannot be found in the current list of players" % (name)))
-		return False
 
 	elif cmd == "community":
 	    if args[0] == "cards":
@@ -193,6 +225,13 @@ class InputParser:
 		
 		elif action == "fold" or action == "folds":
 		    if self.game.addAction(player, FOLD):
+			return True
+		    else:
+			self.errors.append((self.lineNumber, self.game.lastError))
+			return False
+
+		elif action == "check" or action == "checks":
+		    if self.game.addAction(player, CHECK):
 			return True
 		    else:
 			self.errors.append((self.lineNumber, self.game.lastError))
@@ -252,18 +291,19 @@ class InputParser:
 		    self.errors.append((self.lineNumber, "Unknown action '%s'" % (action)))
 		    return False
 	    else:
-		self.warnings.append((self.lineNumber, "Unknown command '%s'" % (cmd)))
+		self.warnings.append((self.lineNumber, "Unknown command or player '%s'" % (cmd)))
 		return True
 
 
 if __name__ == "__main__":
 
+    if len(sys.argv) != 2:
+	print "Usage: python %s <input file>" % (sys.argv[0])
+	exit(1)
+
     game = Game()
-    parser = InputParser("input.txt", game)
-    if parser.parse():
-	print "Game:"
-	print game
-    else:
+    parser = InputParser(sys.argv[1], game)
+    if not parser.parse():
 	print "There were some errors in the text:"
 	if len(parser.errors) > 0:
 	    print "Errors:"

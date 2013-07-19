@@ -3,7 +3,7 @@ import logging
 
 INVISIBLE, ALWAYS_VISIBLE, VISIBLE_ON_HOVER = range(3)
 
-NONE, CALL, BET, RAISE, FOLD, GO_ALL_IN = range(6)
+NONE, CHECK, CALL, BET, RAISE, FOLD, GO_ALL_IN = range(7)
 NONE, PRE_FLOP, FLOP, TURN, RIVER, SHOW_DOWN = range(6)
 NONE, GAME_IN_PROGRESS, GAME_ENDED = range(3)
 
@@ -187,6 +187,12 @@ class Game:
 	return None
 
 
+    def playerAtIndex(self, index):
+
+	assert index >= 1 and index <= 9
+	return self.players[index - 1]
+
+
     def start(self):
 
 	if self.numOfPlayers() <= 1:
@@ -204,7 +210,7 @@ class Game:
 	    return False
 	    
 	self.stage = PRE_FLOP
-	if self.antes > 0:
+	if hasattr(self, "antes") and self.antes > 0:
 	    for player in filter(lambda x: x != None, self.players):
 		if player.chips == 0:
 		    self.lastError = "%s is out of chips"
@@ -247,6 +253,13 @@ class Game:
 	if action == FOLD:
 	    self.currentPlayer.action = FOLD
 
+	elif action == CHECK:
+	    if self.lastBetter:
+		self.lastError = "%s raised/bet, %s cannot check" % (self.lastBetter, self.currentPlayer)
+		return False
+	    else:
+		self.currentPlayer.action = CHECK
+
 	elif action == CALL:
 	    diff = self.lastBetter.bet - self.currentPlayer.bet
 	    self.currentPlayer.putMoney(diff)
@@ -254,7 +267,7 @@ class Game:
 
 	elif action == BET:
 	    if self.lastBetter:
-		self.lastError = "%s has already bet/raised, %s can only raise here" % (self.lastBetter, self.currentPlayer.name)
+		self.lastError = "%s can only raise here" % (self.currentPlayer.name)
 		return False
 	    self.currentPlayer.putMoney(amount)
 	    self.lastBetter = self.currentPlayer
@@ -321,7 +334,7 @@ class Game:
 		    if player:
 			substrs.append("Chips: $%s" % (player.chips))
 			if player.action != NONE:
-			    substrs.append(["NONE", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
+			    substrs.append(["NONE", "CHECK", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
 			if player.bet > 0:
 			    substrs.append("-> $%s" % (player.bet))
 		    if self.currentPlayer == player:
@@ -357,7 +370,7 @@ class Game:
 		if player:
 		    substrs.append("Chips: $%s" % (player.chips))
 		    if player.action != NONE:
-			substrs.append(["NONE", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
+			substrs.append(["NONE", "CHECK", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
 		    if player.bet > 0:
 			substrs.append("-> $%s" % (player.bet))
 		    if self.currentPlayer == player:

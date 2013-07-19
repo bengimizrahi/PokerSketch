@@ -1,0 +1,36 @@
+Num-Seats 10
+Blinds 5 5 
+Player 1
+    Name Mexican1
+    Chips 200
+Player 2
+    Name Mexican2
+    Chips 200
+Player 3
+    Name AssHole
+    Chips 250
+Player 5
+    Name OldGuy 
+    Chips 250
+Player 10
+    Name Me
+    Chips 100
+
+Dealer Player 1
+Me holds Ad9c (visible)
+AssHole holds TJo
+Community cards Ad Ks 2c
+
+# Pre-flop
+OldGuy raises 15
+Me calls
+Mexican1 folds
+Mexican2 folds
+AssHole calls
+
+# Flop
+AssHole checks
+OldGuy checks
+Me bets 15
+AssHole goes all-in
+Me calls
