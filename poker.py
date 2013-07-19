@@ -7,26 +7,42 @@ NONE, CHECK, CALL, BET, RAISE, FOLD, GO_ALL_IN = range(7)
 NONE, PRE_FLOP, FLOP, TURN, RIVER, SHOW_DOWN = range(6)
 NONE, GAME_IN_PROGRESS, GAME_ENDED = range(3)
 
+
+class SidePot:
+
+    def __init__(self):
+
+	self.players = None
+	self.pot = 0
+
+    
+    def prepare(self, players):
+	
+	self.players = players
+	minimumToSubtract = min(map(lambda player: player.bet, players))
+	for player in self.players:
+	    player.bet = player.bet - minimumToSubstract
+
+
+    def __repr__(self):
+
+        strs = []
+	strs.append("SidePot:")
+	strs.append("$%s" % (self.pot))
+	for player in self.players:
+	    strs.append("\t%s" % (player.name))
+
+	
 class Player:
 
     def __init__(self):
 
 	self.name = ''
-	self.chips = 0
+	self.stack = 0
 	self.bet = 0
 	self.cardVisibility = INVISIBLE 
 	self.action = NONE
 	self.state = NONE
-
-
-    def setName(self, name):
-
-	self.name = name
-
-
-    def setChips(self, chips):
-
-	self.chips = chips
 
 
     def setCards(self, cards):
@@ -37,13 +53,13 @@ class Player:
 
     def putMoney(self, amount):
 
-	amountAvailable = min(self.chips, amount)
-	self.chips -= amountAvailable
+	amountAvailable = min(self.stack, amount)
+	self.stack -= amountAvailable
 	self.bet += amountAvailable
 
 
     def __repr__(self):
-	return "Player(Name:%s, Chips:$%s, Bet/Raise:$%s)" % (self.name, self.chips, self.bet)
+	return "Player(Name:%s, Stack:$%s, Bet/Raise:$%s)" % (self.name, self.stack, self.bet)
 
 
 class Game:
@@ -63,7 +79,7 @@ class Game:
 
     def numOfPlayers(self):
 
-	return len(filter(lambda x: x != None, self.players))
+	return len(filter(lambda player: player != None, self.players))
 
 
     def nextPlayer(self, player):
@@ -108,10 +124,23 @@ class Game:
 	self.currentPlayer = player
 
 
+    def collectPots(self):
+
+	claimingPlayers = filter(lambda player: player != None, self.players)
+	assert all(map(lambda player: player.bet > 0, claimingPlayers))
+	assert all(map(lambda player: player.bet == 0, claimingPlayers))
+
+	while len(claimingPlayers) > 0:
+	    sidePot = SidePot()
+	    sidePot.prepare(claimingPlayers)
+	    self.sidePots.append(sidePot)
+	    map(lambda player: claimingPlayers.remove(player), filter(lambda player: player.bet == 0, claimingPlayers))
+
+
     def moveToNextStage(self):
 
 	assert self.stage
-	playersInGame = filter(lambda x:x != None and x.action != FOLD, self.players)
+	playersInGame = filter(lambda player: player != None and player.action != FOLD, self.players)
 	if len(playersInGame) == 1:
 	    self.state = GAME_ENDED
 	    return True
@@ -211,8 +240,8 @@ class Game:
 	    
 	self.stage = PRE_FLOP
 	if hasattr(self, "antes") and self.antes > 0:
-	    for player in filter(lambda x: x != None, self.players):
-		if player.chips == 0:
+	    for player in filter(lambda player: player != None, self.players):
+		if player.stack == 0:
 		    self.lastError = "%s is out of chips"
 		    return False
 
@@ -236,6 +265,7 @@ class Game:
 	    self.moveToNextPlayerInGame()
 
 	self.state = GAME_IN_PROGRESS
+	self.sidePots = []
 	return True
 
 
@@ -280,17 +310,17 @@ class Game:
 		self.lastError = "This is not a raise, it is a call"
 		return False
 	    if amount < self.lastBetter.bet:
-		self.lastError = "%s can only call with $%s here" % (self.currentPlayer, self.currentPlayer.chips + self.currentPlayer.bet)
+		self.lastError = "%s can only call with $%s here" % (self.currentPlayer, self.currentPlayer.stack + self.currentPlayer.bet)
 		return False
 	    diff = amount - self.currentPlayer.bet
-	    if self.currentPlayer.chips < diff:
-		self.lastError = "%s cannot put $%s, he/she only has $%s" % (self.currentPlayer, diff, self.currentPlayer.chips)
+	    if self.currentPlayer.stack < diff:
+		self.lastError = "%s cannot put $%s, he/she only has $%s" % (self.currentPlayer, diff, self.currentPlayer.stack)
 		return False
 	    self.currentPlayer.putMoney(diff)
 	    self.lastBetter = self.currentPlayer
 
 	elif action == GO_ALL_IN:
-	    self.currentPlayer.putMoney(self.currentPlayer.chips)
+	    self.currentPlayer.putMoney(self.currentPlayer.stack)
 	    if self.currentPlayer.bet > self.lastBetter.bet:
 		self.lastBetter = self.currentPlayer
 
@@ -300,6 +330,7 @@ class Game:
 
 	self.moveToNextPlayerInGame()
 	if self.currentPlayer == self.lastBetter:
+	    self.collectPot()
 	    self.moveToNextStage()
 	return True
 
@@ -332,7 +363,7 @@ class Game:
 		    else:
 			substrs.append("<Empty Seat>")
 		    if player:
-			substrs.append("Chips: $%s" % (player.chips))
+			substrs.append("Stack: $%s" % (player.stack))
 			if player.action != NONE:
 			    substrs.append(["NONE", "CHECK", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
 			if player.bet > 0:
@@ -368,7 +399,7 @@ class Game:
 		else:
 		    substrs.append("<Empty Seat>")
 		if player:
-		    substrs.append("Chips: $%s" % (player.chips))
+		    substrs.append("Stack: $%s" % (player.stack))
 		    if player.action != NONE:
 			substrs.append(["NONE", "CHECK", "CALL", "BET", "RAISE", "FOLD", "GO_ALL_IN"][player.action])
 		    if player.bet > 0:

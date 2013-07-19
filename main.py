@@ -129,8 +129,8 @@ class InputParser:
 		    self.warnings.append((self.lineNumber, "Only one entry is allowed here"))
 		if not self.isNumber(args[0]):
 		    self.errors.append((self.lineNumber, "%s is not a valid number" % (args[0])))
-		chips = int(args.pop(0))
-		player.setChips(chips)
+		stack = int(args.pop(0))
+		player.setStack(stack)
 		return True
 	    else:
 		self.errors.append((self.lineNumber, "You should first select a player before giving chips"))
