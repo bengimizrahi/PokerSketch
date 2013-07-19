@@ -18,9 +18,9 @@ class InputParser:
 	input.close()
 
     def readLine(self, cmd, args):
-	if cmd == "num-players":
-	    numPlayers = int(args.pop(0))
-	    game.setNumPlayers(numPlayers)
+	if cmd == "num-seats":
+	    numSeats = int(args.pop(0))
+	    game.setNumSeats(numSeats)
 	    return True
 	elif cmd == "blinds":
 	    smallBlind = int(args.pop(0))
@@ -33,7 +33,7 @@ class InputParser:
 	    return True
 	elif cmd == "player":
 	    playerIndex = int(args.pop(0))
-	    return game.setCursor(playerIndex)
+	    return game.insertPlayerAtIndex(playerIndex)
 	elif cmd == "name":
 	    player = game.cursor
 	    if player:
@@ -107,7 +107,9 @@ class InputParser:
 
 
 if __name__ == "__main__":
-    table = Table()
-    parser = InputParser("input.txt", table)
+    game = Game()
+    parser = InputParser("input.txt", game)
     parser.parse()
-    print table
+    game.setup()
+    print game
+

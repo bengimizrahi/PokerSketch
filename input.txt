@@ -1,4 +1,4 @@
-Num-Players 9
+Num-Seats 9
 Blinds 5 10
 Antes 1
 Player 2
@@ -7,6 +7,9 @@ Player 2
 Player 3
     Name Kursat
     Chips 250
+Player 7
+    Name Cefi
+    Chips 450
 
 Dealer Kursat
 Bengi holds AsKd
